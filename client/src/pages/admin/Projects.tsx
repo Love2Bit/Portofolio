@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProjectSchema, type InsertProject, type Project } from "@shared/schema";
@@ -11,6 +11,58 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, ExternalLink, Github, Loader2 } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
+import { useEffect } from "react";
+
+function TechStackInput({ value, onChange }: { value: string[], onChange: (val: string[]) => void }) {
+  const [str, setStr] = useState(value.join(", "));
+
+  // Sync internal string when external value changes (e.g. on load/reset), 
+  // but avoid overriding user typing if they are roughly in sync.
+  // We'll trust the form reset to trigger a full re-render with new key or we check strict equality?
+  // Actually, form.reset() updates 'value'.
+  // We need to update 'str' only if 'value' changes significantly and it's NOT just from our own onChange.
+  // But since we are controlled, 'value' updates every time we call onChange.
+  // So we need to decouple.
+
+  // Strategy: 
+  // 1. Keep local string `str`.
+  // 2. On change, update `str`, AND parse it to call `onChange`.
+  // 3. But don't update `str` from `value` prop unless it's a completely new array reference from outside?
+  // React-hook-form fields are stable.
+  // Let's use a ref to track if the update came from us.
+
+  const isInternalUpdate = useRef(false);
+
+  useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false;
+      return;
+    }
+    setStr(value.join(", "));
+  }, [value]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVal = e.target.value;
+    setStr(newVal);
+    isInternalUpdate.current = true;
+
+    // Parse: split by comma or semicolon, trim
+    // We keep empty strings? No, filter boolean locally for the array value, 
+    // but the string state keeps the text as is.
+    const arr = newVal.split(/[,;]/).map(s => s.trim()).filter(Boolean);
+    onChange(arr);
+  };
+
+  return (
+    <Input
+      placeholder="React, Node.js, TypeScript"
+      value={str}
+      onChange={handleChange}
+    />
+  );
+}
+
 
 export default function AdminProjects() {
   const { data: projects, isLoading } = useProjects();
@@ -80,8 +132,8 @@ export default function AdminProjects() {
           <h1 className="text-3xl font-display font-bold">Projects</h1>
           <p className="text-muted-foreground">Manage your portfolio showcase.</p>
         </div>
-        
-        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if(!open) resetForm(); }}>
+
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="shadow-lg shadow-primary/20">
               <Plus className="mr-2 h-4 w-4" /> Add Project
@@ -104,7 +156,7 @@ export default function AdminProjects() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="description"
@@ -122,8 +174,14 @@ export default function AdminProjects() {
                   name="imageUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image URL</FormLabel>
-                      <FormControl><Input placeholder="https://..." {...field} value={field.value || ''} /></FormControl>
+                      <FormLabel>Project Image</FormLabel>
+                      <FormControl>
+                        <ImageUpload
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          disabled={createMutation.isPending || updateMutation.isPending}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -159,12 +217,11 @@ export default function AdminProjects() {
                   name="techStack"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Tech Stack (Comma separated)</FormLabel>
+                      <FormLabel>Tech Stack (Comma/Semicolon separated)</FormLabel>
                       <FormControl>
-                        <Input 
-                          placeholder="React, Node.js, TypeScript" 
-                          value={field.value?.join(", ") || ""}
-                          onChange={(e) => field.onChange(e.target.value.split(",").map(s => s.trim()).filter(Boolean))}
+                        <TechStackInput
+                          value={field.value || []}
+                          onChange={field.onChange}
                         />
                       </FormControl>
                       <FormMessage />
@@ -187,9 +244,9 @@ export default function AdminProjects() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
-          [1,2,3].map(i => <div key={i} className="h-64 bg-card/50 animate-pulse rounded-xl" />)
+          [1, 2, 3].map(i => <div key={i} className="h-64 bg-card/50 animate-pulse rounded-xl" />)
         ) : (
-          projects?.map((project) => (
+          projects?.map((project: Project) => (
             <Card key={project.id} className="group overflow-hidden border-border/50 hover:border-primary/50 transition-colors">
               <div className="aspect-video bg-secondary relative">
                 {project.imageUrl && (
@@ -199,11 +256,11 @@ export default function AdminProjects() {
                   <Button size="icon" variant="secondary" onClick={() => handleEdit(project)}>
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button 
-                    size="icon" 
-                    variant="destructive" 
+                  <Button
+                    size="icon"
+                    variant="destructive"
                     onClick={() => {
-                      if(confirm("Are you sure?")) deleteMutation.mutate(project.id);
+                      if (confirm("Are you sure?")) deleteMutation.mutate(project.id);
                     }}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -214,8 +271,8 @@ export default function AdminProjects() {
                 <h3 className="font-bold text-lg mb-2">{project.title}</h3>
                 <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{project.description}</p>
                 <div className="flex gap-2">
-                  {project.projectUrl && <a href={project.projectUrl} target="_blank" className="text-xs flex items-center gap-1 hover:underline"><ExternalLink className="w-3 h-3"/> Live</a>}
-                  {project.repoUrl && <a href={project.repoUrl} target="_blank" className="text-xs flex items-center gap-1 hover:underline"><Github className="w-3 h-3"/> Code</a>}
+                  {project.projectUrl && <a href={project.projectUrl} target="_blank" className="text-xs flex items-center gap-1 hover:underline"><ExternalLink className="w-3 h-3" /> Live</a>}
+                  {project.repoUrl && <a href={project.repoUrl} target="_blank" className="text-xs flex items-center gap-1 hover:underline"><Github className="w-3 h-3" /> Code</a>}
                 </div>
               </CardContent>
             </Card>

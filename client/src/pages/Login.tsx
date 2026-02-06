@@ -10,26 +10,38 @@ import { Link, useLocation } from "wouter";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(1, "Password is required"),
 });
+
+import { useEffect } from "react";
 
 export default function Login() {
   const { login, isLoggingIn, user } = useAuth();
   const [, setLocation] = useLocation();
 
-  if (user) {
-    setLocation("/admin");
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      setLocation("/admin");
+    }
+  }, [user, setLocation]);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
+
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <span className="ml-2 text-muted-foreground">Redirecting...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
@@ -49,12 +61,12 @@ export default function Login() {
             <form onSubmit={form.handleSubmit((data) => login(data))} className="space-y-6">
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="admin" {...field} className="bg-background/50 h-11" />
+                      <Input placeholder="admin@example.com" {...field} className="bg-background/50 h-11" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -73,9 +85,9 @@ export default function Login() {
                   </FormItem>
                 )}
               />
-              <Button 
-                type="submit" 
-                className="w-full h-11 text-base font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all" 
+              <Button
+                type="submit"
+                className="w-full h-11 text-base font-medium shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
                 disabled={isLoggingIn}
               >
                 {isLoggingIn ? (

@@ -65,7 +65,7 @@ export default function AdminSkills() {
     setIsDialogOpen(true);
   };
 
-  const categories = ["frontend", "backend", "tool", "soft"];
+  const categories = ["frontend", "backend", "tool", "soft", "other"];
 
   return (
     <AdminLayout>
@@ -75,7 +75,7 @@ export default function AdminSkills() {
           <p className="text-muted-foreground">Manage your technical expertise.</p>
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if(!open) resetForm(); }}>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
             <Button className="shadow-lg shadow-primary/20">
               <Plus className="mr-2 h-4 w-4" /> Add Skill
@@ -98,7 +98,7 @@ export default function AdminSkills() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="category"
@@ -148,10 +148,10 @@ export default function AdminSkills() {
                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEdit(skill)}>
                         <Pencil className="w-3 h-3" />
                       </Button>
-                      <Button 
-                        size="icon" 
-                        variant="ghost" 
-                        className="h-8 w-8 text-destructive hover:text-destructive" 
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
                         onClick={() => deleteMutation.mutate(skill.id)}
                       >
                         <Trash2 className="w-3 h-3" />

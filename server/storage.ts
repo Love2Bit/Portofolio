@@ -1,7 +1,6 @@
 import { db } from "./db";
 import {
-  users, profile, skills, projects, socials,
-  type User, type InsertUser,
+  profile, skills, projects, socials,
   type Profile, type InsertProfile,
   type Skill, type InsertSkill,
   type Project, type InsertProject,
@@ -10,11 +9,6 @@ import {
 import { eq } from "drizzle-orm";
 
 export interface IStorage {
-  // User (Auth)
-  getUser(id: number): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-
   // Profile
   getProfile(): Promise<Profile | undefined>;
   updateProfile(profile: InsertProfile): Promise<Profile>;
@@ -43,22 +37,6 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User
-  async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
-    return user;
-  }
-
   // Profile
   async getProfile(): Promise<Profile | undefined> {
     const [p] = await db.select().from(profile).limit(1);

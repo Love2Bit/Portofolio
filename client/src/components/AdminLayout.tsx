@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  LayoutDashboard, 
-  User, 
-  Code2, 
-  Briefcase, 
-  Share2, 
+import {
+  LayoutDashboard,
+  User,
+  Code2,
+  Briefcase,
+  Share2,
   LogOut,
   Menu,
   X
@@ -32,7 +32,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     <div className="flex flex-col h-full bg-card">
       <div className="p-6">
         <h2 className="text-xl font-display font-bold text-primary">Admin Panel</h2>
-        <p className="text-sm text-muted-foreground mt-1">Welcome back, {user?.username}</p>
+        <p className="text-sm text-muted-foreground mt-1">Welcome back, {user?.email}</p>
       </div>
       <Separator />
       <nav className="flex-1 p-4 space-y-1">
@@ -41,11 +41,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
           const Icon = item.icon;
           return (
             <Link key={item.name} href={item.href}>
-              <div 
+              <div
                 className={`
                   flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 cursor-pointer
-                  ${isActive 
-                    ? 'bg-primary/10 text-primary font-medium' 
+                  ${isActive
+                    ? 'bg-primary/10 text-primary font-medium'
                     : 'text-muted-foreground hover:bg-muted hover:text-foreground'}
                 `}
                 onClick={() => setIsMobileOpen(false)}
@@ -58,8 +58,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         })}
       </nav>
       <div className="p-4 border-t border-border">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10 gap-2"
           onClick={() => logout()}
         >

@@ -26,6 +26,7 @@ export const skills = pgTable("skills", {
   category: text("category").notNull(), // 'frontend', 'backend', 'tool', 'soft'
   proficiency: integer("proficiency").default(100),
   icon: text("icon"), // lucide icon name
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Projects
@@ -38,6 +39,7 @@ export const projects = pgTable("projects", {
   repoUrl: text("repo_url"),
   techStack: text("tech_stack").array(), // Array of strings
   displayOrder: integer("display_order").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Social Links / Contact
@@ -47,6 +49,12 @@ export const socials = pgTable("socials", {
   url: text("url").notNull(),
   icon: text("icon"), // lucide icon name
   active: boolean("active").default(true),
+});
+
+// Analytics
+export const siteVisits = pgTable("site_visits", {
+  id: serial("id").primaryKey(),
+  visitedAt: timestamp("visited_at").defaultNow(),
 });
 
 // Zod Schemas

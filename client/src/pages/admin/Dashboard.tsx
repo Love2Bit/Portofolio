@@ -1,32 +1,36 @@
-import { useProfile, useSkills, useProjects } from "@/hooks/use-content";
+import { useAnalytics } from "@/hooks/use-analytics";
+import { useProfile } from "@/hooks/use-content";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Code2, Briefcase, Eye, ArrowUpRight } from "lucide-react";
 import { Link } from "wouter";
+import { Button } from "@/components/ui/button";
 
 export default function Dashboard() {
   const { data: profile } = useProfile();
-  const { data: skills } = useSkills();
-  const { data: projects } = useProjects();
+  const { data: analytics } = useAnalytics();
 
   const stats = [
-    { 
-      title: "Total Projects", 
-      value: projects?.length || 0, 
+    {
+      title: "Total Projects",
+      value: analytics?.projects.current || 0,
+      growth: analytics?.projects.growth || 0,
       icon: Briefcase,
       color: "text-blue-500",
       bg: "bg-blue-500/10"
     },
-    { 
-      title: "Skills Listed", 
-      value: skills?.length || 0, 
+    {
+      title: "Skills Listed",
+      value: analytics?.skills.current || 0,
+      growth: analytics?.skills.growth || 0,
       icon: Code2,
       color: "text-purple-500",
       bg: "bg-purple-500/10"
     },
-    { 
-      title: "Profile Views", 
-      value: "1.2k", 
+    {
+      title: "Profile Views",
+      value: analytics?.visits.current || 0,
+      growth: analytics?.visits.growth || 0,
       icon: Eye,
       color: "text-green-500",
       bg: "bg-green-500/10"
@@ -56,7 +60,9 @@ export default function Dashboard() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold">{stat.value}</div>
-                  <p className="text-xs text-muted-foreground mt-1">+12% from last month</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stat.growth >= 0 ? "+" : ""}{stat.growth}% from last month
+                  </p>
                 </CardContent>
               </Card>
             );
@@ -83,7 +89,7 @@ export default function Dashboard() {
                   <ArrowUpRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
               </Link>
-              
+
               <Link href="/admin/profile">
                 <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-card hover:bg-accent/5 cursor-pointer transition-colors group">
                   <div className="flex items-center gap-4">

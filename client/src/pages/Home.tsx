@@ -1,16 +1,37 @@
 import { motion } from "framer-motion";
 import { useProfile, useSkills, useProjects, useSocials } from "@/hooks/use-content";
+import { useAuth } from "@/hooks/use-auth";
+import type { Project } from "@shared/schema";
 import { Github, Linkedin, Mail, Twitter, ExternalLink, Code2, ArrowRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "wouter";
+import ParticlesBackground from "@/components/ParticlesBackground";
+import { useRecordVisit } from "@/hooks/use-analytics";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const { data: profile } = useProfile();
+  const { mutate: recordVisit } = useRecordVisit();
+
+  useEffect(() => {
+    recordVisit();
+  }, [recordVisit]);
+
   const { data: skills } = useSkills();
   const { data: projects } = useProjects();
   const { data: socials } = useSocials();
+  const { user } = useAuth();
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const groupedSkills = skills?.reduce((acc, skill) => {
     if (!acc[skill.category]) acc[skill.category] = [];
@@ -19,22 +40,95 @@ export default function Home() {
   }, {} as Record<string, typeof skills>);
 
   const getIcon = (iconName: string | null) => {
-    switch(iconName?.toLowerCase()) {
-      case 'github': return <Github className="w-5 h-5" />;
-      case 'linkedin': return <Linkedin className="w-5 h-5" />;
-      case 'twitter': return <Twitter className="w-5 h-5" />;
-      case 'email': return <Mail className="w-5 h-5" />;
-      default: return <ExternalLink className="w-5 h-5" />;
-    }
+    if (!iconName) return <ExternalLink className="w-5 h-5" />;
+
+    // Normalize string to match common FontAwesome brand names
+    const name = iconName.toLowerCase().replace(/\s+/g, '');
+
+    // Map of common overrides/aliases
+    const aliases: Record<string, string> = {
+      'email': 'envelope',
+      'website': 'globe',
+      'c++': 'cplusplus',
+      'c#': 'csharp',
+      'next.js': 'react',
+      'express': 'node-js',
+      'internetofthings': 'robot',
+      'iot': 'robot',
+      'artificialintelligence': 'brain',
+      'ai': 'brain',
+      'machinelearning': 'brain',
+      'ml': 'brain',
+      'photography': 'camera',
+      'photo': 'camera',
+      'cooking': 'utensils',
+      'cook': 'utensils',
+      'chef': 'utensils',
+      'writing': 'pen-nib',
+      'writer': 'pen-nib',
+      'design': 'palette',
+      'art': 'palette',
+      'gaming': 'gamepad',
+      'game': 'gamepad',
+      'music': 'music',
+      'video': 'video',
+      'film': 'film',
+      'editing': 'photo-video',
+      'code': 'code',
+      'coding': 'code',
+      'programming': 'code',
+      'dev': 'code',
+      'database': 'database',
+      'db': 'database',
+      'sql': 'database',
+      'server': 'server',
+      'backend': 'server',
+      'cloud': 'cloud',
+      'aws': 'cloud',
+      'azure': 'cloud',
+      'deploy': 'rocket',
+      'deployment': 'rocket',
+    };
+
+    const faName = aliases[name] || name;
+
+    // Check if it's likely a brand or a solid icon
+    // 'envelope', 'robot', 'brain', 'globe' are solid icons
+    const solidIcons = [
+      'envelope', 'robot', 'brain', 'globe', 'server', 'database', 'cloud',
+      'camera', 'utensils', 'pen-nib', 'palette', 'gamepad', 'music',
+      'video', 'film', 'photo-video', 'code', 'rocket'
+    ];
+    const prefix = solidIcons.includes(faName) ? 'fa-solid' : 'fa-brands';
+
+    return <i className={`${prefix} fa-${faName} text-xl`} />;
   };
 
-  if (!profile) return null; // Or a nice skeleton loader
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
+        <div className="text-center space-y-4">
+          <h1 className="text-4xl font-bold">Welcome!</h1>
+          <p className="text-muted-foreground text-lg">The site is ready, but needs some content.</p>
+          <Link href="/login">
+            <Button>Go to Admin Dashboard</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background font-sans">
       {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 glass-panel border-b-0 rounded-none h-16">
-        <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
+      <nav
+        className={`fixed z-50 transition-all duration-500 ease-in-out flex items-center justify-between px-6 
+        ${isScrolled
+            ? "top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-5xl h-16 rounded-full border border-white/10 bg-black/60 backdrop-blur-md shadow-2xl shadow-primary/10"
+            : "top-0 left-1/2 -translate-x-1/2 w-full h-16 bg-transparent border-transparent"
+          }`}
+      >
+        <div className="w-full h-full flex items-center justify-between">
           <div className="text-xl font-display font-bold gradient-text">
             {profile.name}
           </div>
@@ -44,16 +138,19 @@ export default function Home() {
             <a href="#projects" className="hover:text-primary transition-colors">Projects</a>
             <a href="#contact" className="hover:text-primary transition-colors">Contact</a>
           </div>
-          <Link href="/login">
-            <Button variant="ghost" size="sm" className="hidden md:flex">Admin</Button>
-          </Link>
+          {user && (
+            <Link href="/login">
+              <Button variant="ghost" size="sm" className="hidden md:flex">Admin</Button>
+            </Link>
+          )}
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section id="about" className="pt-32 pb-20 px-4 md:pt-48 md:pb-32">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-          <motion.div 
+      <section id="about" className="pt-32 pb-20 px-4 md:pt-48 md:pb-32 relative overflow-hidden">
+        <ParticlesBackground />
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
+          <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -68,13 +165,13 @@ export default function Home() {
             <p className="text-muted-foreground mb-8 max-w-lg leading-relaxed">
               {profile.bio}
             </p>
-            
+
             <div className="flex flex-wrap gap-4">
               {socials?.filter(s => s.active).map((social) => (
-                <a 
-                  key={social.id} 
-                  href={social.url} 
-                  target="_blank" 
+                <a
+                  key={social.id}
+                  href={social.url}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 rounded-full bg-secondary/50 hover:bg-secondary text-foreground transition-all hover:-translate-y-1"
                 >
@@ -90,7 +187,7 @@ export default function Home() {
             </div>
           </motion.div>
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -98,11 +195,11 @@ export default function Home() {
           >
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 to-accent/20 blur-3xl rounded-full -z-10" />
             {profile.avatarUrl ? (
-               <img 
-                 src={profile.avatarUrl} 
-                 alt={profile.name}
-                 className="w-80 h-80 md:w-96 md:h-96 object-cover rounded-2xl rotate-3 hover:rotate-0 transition-all duration-500 shadow-2xl border border-white/10 mx-auto"
-               />
+              <img
+                src={profile.avatarUrl}
+                alt={profile.name}
+                className="w-80 h-80 md:w-96 md:h-96 object-cover rounded-2xl rotate-3 hover:rotate-0 transition-all duration-500 shadow-2xl border border-white/10 mx-auto"
+              />
             ) : (
               <div className="w-80 h-80 md:w-96 md:h-96 bg-secondary/30 rounded-2xl rotate-3 mx-auto flex items-center justify-center border border-white/5">
                 <span className="text-6xl">👋</span>
@@ -127,7 +224,7 @@ export default function Home() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {groupedSkills && Object.entries(groupedSkills).map(([category, items]) => (
-              <motion.div 
+              <motion.div
                 key={category}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -140,11 +237,16 @@ export default function Home() {
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {items.map((skill) => (
-                    <Badge 
-                      key={skill.id} 
-                      variant="secondary" 
+                    <Badge
+                      key={skill.id}
+                      variant="secondary"
                       className="px-3 py-1 text-sm bg-secondary/50 hover:bg-primary hover:text-primary-foreground transition-colors"
                     >
+                      {skill.icon ? (
+                        <i className={`${skill.icon} text-lg mr-2`} />
+                      ) : (
+                        <span className="mr-2">{getIcon(skill.name)}</span>
+                      )}
                       {skill.name}
                     </Badge>
                   ))}
@@ -169,7 +271,7 @@ export default function Home() {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {projects?.map((project, index) => (
+            {projects?.map((project: Project, index: number) => (
               <motion.div
                 key={project.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -180,8 +282,8 @@ export default function Home() {
               >
                 <div className="aspect-video bg-secondary/30 overflow-hidden relative">
                   {project.imageUrl ? (
-                    <img 
-                      src={project.imageUrl} 
+                    <img
+                      src={project.imageUrl}
                       alt={project.title}
                       className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500"
                     />
@@ -203,14 +305,14 @@ export default function Home() {
                     )}
                   </div>
                 </div>
-                
+
                 <CardContent className="p-6">
                   <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{project.title}</h3>
                   <p className="text-muted-foreground mb-4 line-clamp-3 text-sm leading-relaxed">
                     {project.description}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-auto">
-                    {project.techStack?.slice(0, 4).map((tech) => (
+                    {project.techStack?.slice(0, 4).map((tech: string) => (
                       <span key={tech} className="text-xs px-2 py-1 rounded-md bg-secondary text-secondary-foreground font-mono">
                         {tech}
                       </span>

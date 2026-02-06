@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, Save } from "lucide-react";
+import { ImageUpload } from "@/components/ui/image-upload";
 import { useEffect } from "react";
 
 export default function AdminProfile() {
@@ -39,7 +40,7 @@ export default function AdminProfile() {
     <AdminLayout>
       <div className="max-w-3xl">
         <h1 className="text-3xl font-display font-bold mb-6">Edit Profile</h1>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit((data) => updateMutation.mutate(data))} className="space-y-6">
             <Card>
@@ -61,7 +62,7 @@ export default function AdminProfile() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="tagline"
@@ -83,10 +84,10 @@ export default function AdminProfile() {
                     <FormItem>
                       <FormLabel>Biography</FormLabel>
                       <FormControl>
-                        <Textarea 
-                          placeholder="Tell your story..." 
-                          className="min-h-[150px] resize-none" 
-                          {...field} 
+                        <Textarea
+                          placeholder="Tell your story..."
+                          className="min-h-[150px] resize-none"
+                          {...field}
                         />
                       </FormControl>
                       <FormMessage />
@@ -107,9 +108,13 @@ export default function AdminProfile() {
                   name="avatarUrl"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Avatar URL (Image Address)</FormLabel>
+                      <FormLabel>Avatar Image</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://..." {...field} value={field.value || ''} />
+                        <ImageUpload
+                          value={field.value || ""}
+                          onChange={field.onChange}
+                          disabled={updateMutation.isPending}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
